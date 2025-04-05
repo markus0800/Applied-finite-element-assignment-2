@@ -135,7 +135,7 @@ def create_param_map(mesh):
     param_map = {'map':map, 'map_derivatives':map_derivatives, 'imap_derivatives':imap_derivatives}
     return param_map    
 
-def assemble_fe_problem(mesh, space ,ref_data, param_map, problem_B, problem_L, bc, f ):
+def assemble_fe_problem(mesh, space ,ref_data, param_map, problem_B, problem_L, bc):
     evaluation_points = ref_data['evaluation_points']
     quadrature_weight = ref_data['quadrature_weights']
 
@@ -164,22 +164,26 @@ def assemble_fe_problem(mesh, space ,ref_data, param_map, problem_B, problem_L, 
                 A[basis_i,basis_j] += value
             value = 0 
             for r in range(0,neval):
-                value += f(x_l[r]) * problem_L(x_l[r], N_i[r], dN_i[r]) * param_map['map_derivatives'][l] * quadrature_weight[r] 
+                value +=  problem_L(x_l[r], N_i[r], dN_i[r]) * param_map['map_derivatives'][l] * quadrature_weight[r] 
             
             b[basis_i] += value 
         
-        b+= -bc[0]*A[:,0] -bc[1]*A[:,-1] 
-    return A, b
+    b+= -bc[0]*A[:,0] -bc[1]*A[:,-1] 
+    return A[1:-1,1:-1], b[1:-1]
 
-def problem_B(x,Nj,dNj,Nk,dNk):
+def problem_B1(x,Nj,dNj,Nk,dNk):
     return dNj * dNk
 
-def problem_L(x,Nj,dNj):
-    return Nj
+def problem_L1(x,Nj,dNj):
+    return np.pi**2 * np.sin(np.pi*x) * Nj  
 
+def problem_L(x,Nj,dNj):
+    return  Nj  
 
 def problem_B2(x,Nj,dNj,Nk,dNk):
     return (1-0.4*np.cos(np.pi * x))*dNj * dNk + Nj * Nk
 
 def problem_L2(x,Nj,dNj):
-    return Nj
+    return  np.pi**2*np.sin(np.pi**2*x) * np.where(x < 1, 1, -1) * Nj
+
+
